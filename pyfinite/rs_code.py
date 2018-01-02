@@ -13,8 +13,8 @@ docstrings provide detailed information on various topics.
 
 """
 
-import ffield
-import genericmatrix
+from pyfinite import ffield
+from pyfinite import genericmatrix
 import math
 
 
@@ -99,9 +99,9 @@ class RSCode:
             self.encoderMatrix.Transpose()
 
     def __repr__(self):
-        rep = ('<RSCode (n,k) = (' + `self.n` +', ' + `self.k` + ')'
-               + '  over GF(2^' + `self.field.n` + ')\n' +
-               `self.encoderMatrix` + '\n' + '>')
+        rep = ('<RSCode (n,k) = (' + repr(self.n) +', ' + repr(self.k) + ')'
+               + '  over GF(2^' + repr(self.field.n) + ')\n' +
+               repr(self.encoderMatrix) + '\n' + '>')
         return rep
                
     def CreateEncoderMatrix(self):                   
@@ -136,7 +136,7 @@ class RSCode:
                         properly prepare for decoding.
         """
         if (len(unErasedLocations) != self.k):
-            raise ValueError, 'input must be exactly length k'
+            raise ValueError('input must be exactly length k')
         
         limitedEncoder = genericmatrix.GenericMatrix(
             (self.k,self.k),0,1,self.field.Add,self.field.Subtract,
@@ -168,7 +168,7 @@ class RSCode:
         """
 
         if (len(data) != self.n):
-            raise ValueError, 'input must be a length n list'
+            raise ValueError('input must be a length n list')
 
         unErasedLocations = []
         unErasedTerms = []
@@ -184,7 +184,7 @@ class RSCode:
         
         maxErasures = self.n-self.k
         for i in range(numTests):
-            inVec = range(self.k)
+            inVec = list(range(self.k))
             for j in range(self.k):
                 inVec[j] = random.randint(0, (1<<self.field.n)-1)
             codedVec = self.Encode(inVec)
@@ -195,9 +195,9 @@ class RSCode:
                     j = random.randint(0,self.n-1)
                 codedVec[j] = None
             decVec = self.DecodeImmediate(codedVec)
-            assert decVec == inVec, ('inVec = ' + `inVec`
-                                     + '\ncodedVec = ' + `codedVec`
-                                     + '\ndecVec = ' + `decVec`)
+            assert decVec == inVec, ('inVec = ' + repr(inVec)
+                                     + '\ncodedVec = ' + repr(codedVec)
+                                     + '\ndecVec = ' + repr(decVec))
 
 license_doc = """
   This code was originally written by Emin Martinian (emin@allegro.mit.edu).
@@ -243,4 +243,4 @@ def _test():
 
 if __name__ == "__main__":
     _test()
-    print 'Tests passed'
+    print('Tests passed')
