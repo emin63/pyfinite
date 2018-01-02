@@ -1,6 +1,5 @@
 
-# Copyright Emin Martinian 2002.  See below for license terms.
-# Version Control Info: $Id: rs_code.py,v 1.3 2003/10/28 21:42:56 emin Exp $
+# Copyright Emin Martinian 2002--2018.  See below for license terms.
 
 """
 This package implements the RSCode class designed to do
@@ -33,7 +32,7 @@ class RSCode:
 
     A breif example of how to use the code follows:
     
->>> import rs_code
+>>> from pyfinite import rs_code
 
 # Create a coder for an (n,k) = (16,8) code and test 
 # decoding for a simple erasure pattern.
@@ -238,7 +237,7 @@ POSSIBILITY OF SUCH DAMAGES.
 # check examples in docstrings.
 
 def _test():
-    import doctest, rs_code
+    import doctest
     return doctest.testmod(rs_code)
 
 if __name__ == "__main__":
