@@ -26,6 +26,7 @@ detailed information on various topics:
 """
 
 import string, random, os, os.path, pickle
+from functools import reduce
 
 
 # The following list of primitive polynomials are the Conway Polynomials
@@ -78,12 +79,12 @@ gPrimitivePolysCondensed = {
     100 : (100,15,0)
     }
 
-for n in gPrimitivePolysCondensed.keys():
+for n in list(gPrimitivePolysCondensed.keys()):
     gPrimitivePolys[n] = [0]*(n+1)
     if (n < 16):
         unity = 1
     else:
-        unity = long(1)
+        unity = int(1)
     for index in gPrimitivePolysCondensed[n]:
         gPrimitivePolys[n][index] = unity
     gPrimitivePolys[n].reverse()
@@ -182,10 +183,10 @@ class FField:
             self.Multiply = self.DoMultiply
             self.Divide = self.DoDivide
         else: # Need to use longs for larger fields
-            self.unity = long(1)
+            self.unity = int(1)
             self.Inverse = self.DoInverseForBigField
-            self.Multiply = lambda a,b: self.DoMultiply(long(a),long(b))
-            self.Divide = lambda a,b: self.DoDivide(long(a),long(b))
+            self.Multiply = lambda a,b: self.DoMultiply(int(a),int(b))
+            self.Divide = lambda a,b: self.DoDivide(int(a),int(b))
 
 
 
@@ -193,21 +194,19 @@ class FField:
         fieldSize = 1 << self.n
         lutName = 'ffield.lut.' + str(self.n)
         if (os.path.exists(lutName)):
-            fd = open(lutName,'r')
+            fd = open(lutName,'rb')
             self.lut = pickle.load(fd)
             fd.close()
         else:
             self.lut = LUT()
-            self.lut.mulLUT = range(fieldSize)
-            self.lut.divLUT = range(fieldSize)
+            self.lut.mulLUT = list(range(fieldSize))
+            self.lut.divLUT = list(range(fieldSize))
             self.lut.mulLUT[0] = [0]*fieldSize
             self.lut.divLUT[0] = ['NaN']*fieldSize
             for i in range(1,fieldSize):
-                self.lut.mulLUT[i] = map(lambda x: self.DoMultiply(i,x),
-                                         range(fieldSize))
-                self.lut.divLUT[i] = map(lambda x: self.DoDivide(i,x),
-                                         range(fieldSize))
-            fd = open(lutName,'w')
+                self.lut.mulLUT[i] = [self.DoMultiply(i,x) for x in range(fieldSize)]
+                self.lut.divLUT[i] = [self.DoDivide(i,x) for x in range(fieldSize)]
+            fd = open(lutName,'wb')
             pickle.dump(self.lut,fd)
             fd.close()
 
@@ -258,8 +257,8 @@ class FField:
         Computes the multiplicative inverse of its argument and
         returns the result.
         """
-        return self.ExtendedEuclid(self.unity,long(f),self.generator,
-                                   self.FindDegree(long(f)),self.n)[1]
+        return self.ExtendedEuclid(self.unity,int(f),self.generator,
+                                   self.FindDegree(int(f)),self.n)[1]
 
     def DoDivide(self,f,v):
         """
@@ -379,7 +378,7 @@ class FField:
                 result = result + (' x^' + str(i))
         if (1 & f):
             result = result + ' ' + str(1)
-        return string.replace(string.strip(result),' ',' + ')
+        return result.strip().replace(' ',' + ')
 
     def GetRandomElement(self,nonZero=0,maxDegree=None):
         """
@@ -397,9 +396,9 @@ class FField:
         if (maxDegree < 31):
             return random.randint(nonZero != 0,(1<<maxDegree)-1)
         else:
-            result = long(0)
+            result = int(0)
             for i in range(0,maxDegree):
-                result = result ^ (random.randint(0,1) << long(i))
+                result = result ^ (random.randint(0,1) << int(i))
             if (nonZero and result == 0):
                 return self.GetRandomElement(1)
             else:
@@ -419,7 +418,7 @@ class FField:
         field.
         """
 
-        temp = map(lambda a, b: a << b, l, range(len(l)-1,-1,-1))
+        temp = list(map(lambda a, b: a << b, l, list(range(len(l)-1,-1,-1))))
         return reduce(lambda a, b: a | b, temp)
 
     def TestFullDivision(self):
@@ -525,6 +524,9 @@ x^4 + x^3
         assert self.field == other.field
         return FElement(self.field,self.field.Divide(self.f,other.f))
 
+    def __truediv__(self, other):
+        return self.__div__(other)
+
     def __str__(self):
         return self.field.ShowPolynomial(self.f)
 
@@ -545,7 +547,7 @@ def FullTest(testsPerField=10,sizeList=None):
     """
 
     if (None == sizeList):
-        sizeList = gPrimitivePolys.keys()
+        sizeList = list(gPrimitivePolys.keys())
     for i in sizeList:
         F = FField(i)
         for j in range(testsPerField):
