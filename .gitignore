@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Emacs files
+*~
+
+# Lookup tables
+*.lut.*
+
+
 # C extensions
 *.so
 
