@@ -12,9 +12,12 @@ docstrings provide detailed information on various topics.
 
 """
 
+import math
+import doctest
+
 from pyfinite import ffield
 from pyfinite import genericmatrix
-import math
+
 
 
 class RSCode:
@@ -237,9 +240,8 @@ POSSIBILITY OF SUCH DAMAGES.
 # check examples in docstrings.
 
 def _test():
-    import doctest
-    return doctest.testmod(rs_code)
+    return doctest.testmod()
 
 if __name__ == "__main__":
     _test()
-    print('Tests passed')
+    print('Tests finished')
