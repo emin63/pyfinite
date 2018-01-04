@@ -1,6 +1,5 @@
 
-# Copyright Emin Martinian 2002.  See below for license terms.
-# Version Control Info: $Id: genericmatrix.py,v 1.4 2003/10/28 21:42:56 emin Exp $
+# Copyright Emin Martinian 2002--2018.  See below for license terms.
 
 """
 This package implements the GenericMatrix class to provide matrix
@@ -21,6 +20,7 @@ The following docstrings provide detailed information on various topics:
 
 """
 
+import doctest
 import operator
 from functools import reduce
 
@@ -61,7 +61,7 @@ class GenericMatrix:
     A quick and dirty example of how to use the GenericMatrix class
     for matricies of floats is provided below.
     
->>> import genericmatrix
+>>> from pyfinite import genericmatrix
 >>> v = genericmatrix.GenericMatrix((3,3))
 >>> v.SetRow(0,[0.0, -1.0, 1.0])
 >>> v.SetRow(1,[1.0, 1.0, 1.0])
@@ -666,7 +666,7 @@ ValueError: matrix not invertible
         The following is an example of how to use Solve:
 
 >>> # Floating point example
->>> import genericmatrix
+>>> from pyfinite import genericmatrix
 >>> A = genericmatrix.GenericMatrix(size=(2,5),str=lambda x: '%.4f' % x)
 >>> A.SetRow(0,[0.0, 0.0, 0.160, 0.550, 0.280])
 >>> A.SetRow(1,[0.0, 0.0, 0.745, 0.610, 0.190])
@@ -841,7 +841,7 @@ RandomSolveTest, and RandomDetTest which generate random floating
 point values and test the appropriate routines.  The simplest way to
 run these tests is via
 
->>> import genericmatrix
+>>> from pyfinite import genericmatrix
 >>> t = genericmatrix.GenericMatrixTester()
 >>> t.DoTests(100,[1,2,3,4,5,10])
 
@@ -864,8 +864,7 @@ __test__ = {
 }
 
 def _test():
-    import doctest, genericmatrix
-    return doctest.testmod(genericmatrix)
+    return doctest.testmod()
 
 if __name__ == "__main__":
     _test()
