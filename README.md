@@ -24,7 +24,8 @@ before being moved to github. It is in need of some love. In
 particular, it could use:
 
   1. Reworking to fix pep8/pylint warninsg and generally better python style.
-  2. More documentation.
-  3. More examples.
+  2. A setup.py file so that people can install via pip or setuptools.
+  3. More documentation.
+  4. More examples.
 
 To help or contribute please see the main project site at https://github.com/emin63/pyfinite.
