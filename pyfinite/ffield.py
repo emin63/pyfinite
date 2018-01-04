@@ -1,6 +1,3 @@
-
-# Copyright Emin Martinian 2002--2018  See below for license terms.
-
 """
 This package contains the FField class designed to perform calculations
 in finite fields of characteristic two.  The following docstrings provide
@@ -25,7 +22,10 @@ detailed information on various topics:
 
 """
 
-import string, random, os, os.path, pickle
+import random
+import os
+import pickle
+import doctest
 from functools import reduce
 
 
@@ -119,7 +119,7 @@ class FField:
 
     Example of how to use the FField class:
 
->>> import ffield
+>>> from pyfinite import ffield
 >>> F = ffield.FField(5) # create the field GF(2^5)
 >>> a = 7 # field elements are denoted as integers from 0 to 2^5-1
 >>> b = 15
@@ -468,7 +468,7 @@ class FElement:
     Note that before creating FElement objects you must first
     create an FField object.  For example,
 
->>> import ffield
+>>> from pyfinite import ffield
 >>> F = FField(5)
 >>> e1 = FElement(F,7)
 >>> e1
@@ -734,7 +734,7 @@ The FField class has a number of built in testing functions such as
 TestFullDivision, TestInverse.  The simplest thing to
 do is to call the FullTest method.
 
->>> import ffield
+>>> from pyfinite import ffield
 >>> ffield.FullTest(sizeList=None,testsPerField=100)
 
 # To decrease the testing time you can either decrease the testsPerField
@@ -757,10 +757,9 @@ __test__ = {
 }
 
 def _test():
-    import doctest, ffield
-    return doctest.testmod(ffield)
+    return doctest.testmod()
 
 if __name__ == "__main__":
     print('Starting automated tests (this may take a while)')
     _test()
-    print('Tests passed.')
+    print('Tests finished.')
