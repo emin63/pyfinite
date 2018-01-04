@@ -1,8 +1,5 @@
+"""File erasure correction codes.
 
-# Copyright Emin Martinian 2002.  See below for license terms.
-# Version Control Info: $Id: file_ecc.py,v 1.4 2003/10/28 21:42:56 emin Exp $
-
-__doc__ = """
 This package implements an erasure correction code for files.
 Specifically it lets you take a file F and break it into N
 pieces (which are named F.p_0, F.p_1, ..., F.p_N-1) such that
@@ -36,28 +33,29 @@ license_doc describes the license and lack of warranty.
 
 The following is an example of how to use this file:
 
->>> import file_ecc
->>> testFile = '/bin/ls'      # A reasonable size file for testing.
->>> prefix = '/tmp/ls_backup' # Prefix for shares of file.
+>>> import os, tempfile
+>>> from pyfinite import file_ecc
+>>> testFile = file_ecc.__file__  # A reasonable size file for testing.
+>>> prefix = tempfile.mktemp()    # Prefix for shares of file.
 >>> names = file_ecc.EncodeFile(testFile,prefix,15,11) # break into N=15 pieces
 
 # Imagine that only pieces [0,1,5,4,13,8,9,10,11,12,14] are available.
 >>> decList = [prefix + '.p_' + str(x) for x in [0,1,5,4,13,8,9,10,11,12,14]]
->>> decodedFile = '/tmp/ls.r' # Choose where we want reconstruction to go.
+>>> decodedFile = tempfile.mktemp(suffix='decoded')
 >>> file_ecc.DecodeFiles(decList,decodedFile)
 >>> fd1 = open(testFile,'rb')
 >>> fd2 = open(decodedFile,'rb')
 >>> fd1.read() == fd2.read()
-1
+True
+>>> ignore = fd1.close(), fd2.close()
+>>> ignore = [os.remove(fn) for fn in (names + [decodedFile])]
 """
-
-
-
-from pyfinite.rs_code import RSCode
-from array import array
 
 import os
 import struct
+import doctest
+from array import array
+from pyfinite.rs_code import RSCode
 
 headerSep = '|'
 
@@ -171,6 +169,7 @@ def DecodeFiles(fnames,outName):
         ReadDecodeAndWriteBlock(k,inFDs,outFD,code)
     if ((inSize%k)>0):
         ReadDecodeAndWriteBlock(inSize%k,inFDs,outFD,code)
+    outFD.close()
 
 license_doc = """
   This code was originally written by Emin Martinian (emin@allegro.mit.edu).
@@ -210,9 +209,8 @@ POSSIBILITY OF SUCH DAMAGES.
 # check examples in docstrings.
 
 def _test():
-    import doctest, file_ecc
-    return doctest.testmod(file_ecc)
+    return doctest.testmod()
 
 if __name__ == "__main__":
     _test()
-    print('Tests passed')
+    print('Tests finished')
