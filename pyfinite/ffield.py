@@ -1,3 +1,7 @@
+
+# Copyright Emin Martinian 2002.  See below for license terms.
+# Version Control Info: $Id: ffield.py,v 1.5 2007/03/15 02:49:44 emin Exp $
+
 """
 This package contains the FField class designed to perform calculations
 in finite fields of characteristic two.  The following docstrings provide
@@ -22,12 +26,10 @@ detailed information on various topics:
 
 """
 
-import random
-import os
-import pickle
-import doctest
+import string, random, os, os.path, pickle
+import sys
+import functools
 from functools import reduce
-
 
 # The following list of primitive polynomials are the Conway Polynomials
 # from the list at
@@ -79,15 +81,18 @@ gPrimitivePolysCondensed = {
     100 : (100,15,0)
     }
 
-for n in list(gPrimitivePolysCondensed.keys()):
+for n in gPrimitivePolysCondensed.keys():
     gPrimitivePolys[n] = [0]*(n+1)
-    if (n < 16):
-        unity = 1
-    else:
-        unity = int(1)
+    unity = 1
     for index in gPrimitivePolysCondensed[n]:
         gPrimitivePolys[n][index] = unity
     gPrimitivePolys[n].reverse()
+
+
+if sys.version_info[0] >= 3:
+    def long(data):
+        "Fake the `long` function since not needed after python 2"
+        return data
 
 
 class FField:
@@ -119,7 +124,7 @@ class FField:
 
     Example of how to use the FField class:
 
->>> from pyfinite import ffield
+>>> import ffield
 >>> F = ffield.FField(5) # create the field GF(2^5)
 >>> a = 7 # field elements are denoted as integers from 0 to 2^5-1
 >>> b = 15
@@ -176,23 +181,23 @@ class FField:
             self.PrepareLUT()
             self.Multiply = self.LUTMultiply
             self.Divide = self.LUTDivide
-            self.Inverse = lambda x: self.LUTDivide(1,x)
+            self.Inverse = functools.partial(self.LUTDivide, 1)
         elif (self.n < 15):
             self.unity = 1
             self.Inverse = self.DoInverseForSmallField
             self.Multiply = self.DoMultiply
             self.Divide = self.DoDivide
         else: # Need to use longs for larger fields
-            self.unity = int(1)
+            self.unity = long(1)
             self.Inverse = self.DoInverseForBigField
-            self.Multiply = lambda a,b: self.DoMultiply(int(a),int(b))
-            self.Divide = lambda a,b: self.DoDivide(int(a),int(b))
+            self.Multiply = lambda a,b: self.DoMultiply(long(a),long(b))
+            self.Divide = lambda a,b: self.DoDivide(long(a),long(b))
 
 
 
     def PrepareLUT(self):
         fieldSize = 1 << self.n
-        lutName = 'ffield.lut.' + str(self.n)
+        lutName = 'ffield.lut.' + repr(self.n)
         if (os.path.exists(lutName)):
             fd = open(lutName,'rb')
             self.lut = pickle.load(fd)
@@ -204,8 +209,10 @@ class FField:
             self.lut.mulLUT[0] = [0]*fieldSize
             self.lut.divLUT[0] = ['NaN']*fieldSize
             for i in range(1,fieldSize):
-                self.lut.mulLUT[i] = [self.DoMultiply(i,x) for x in range(fieldSize)]
-                self.lut.divLUT[i] = [self.DoDivide(i,x) for x in range(fieldSize)]
+                self.lut.mulLUT[i] = [self.DoMultiply(i,x)
+                                      for x in range(fieldSize)]
+                self.lut.divLUT[i] = [self.DoDivide(i,x)
+                                      for x in range(fieldSize)]
             fd = open(lutName,'wb')
             pickle.dump(self.lut,fd)
             fd.close()
@@ -257,8 +264,8 @@ class FField:
         Computes the multiplicative inverse of its argument and
         returns the result.
         """
-        return self.ExtendedEuclid(self.unity,int(f),self.generator,
-                                   self.FindDegree(int(f)),self.n)[1]
+        return self.ExtendedEuclid(self.unity,long(f),self.generator,
+                                   self.FindDegree(long(f)),self.n)[1]
 
     def DoDivide(self,f,v):
         """
@@ -375,9 +382,9 @@ class FField:
 
         for i in range(fDegree,0,-1):
             if ((1 << i) & f):
-                result = result + (' x^' + str(i))
+                result = result + (' x^' + repr(i))
         if (1 & f):
-            result = result + ' ' + str(1)
+            result = result + ' ' + repr(1)
         return result.strip().replace(' ',' + ')
 
     def GetRandomElement(self,nonZero=0,maxDegree=None):
@@ -396,9 +403,9 @@ class FField:
         if (maxDegree < 31):
             return random.randint(nonZero != 0,(1<<maxDegree)-1)
         else:
-            result = int(0)
+            result = 0
             for i in range(0,maxDegree):
-                result = result ^ (random.randint(0,1) << int(i))
+                result = result ^ (random.randint(0,1) << long(i))
             if (nonZero and result == 0):
                 return self.GetRandomElement(1)
             else:
@@ -418,7 +425,7 @@ class FField:
         field.
         """
 
-        temp = list(map(lambda a, b: a << b, l, list(range(len(l)-1,-1,-1))))
+        temp = map(lambda a, b: a << b, l, range(len(l)-1,-1,-1))
         return reduce(lambda a, b: a | b, temp)
 
     def TestFullDivision(self):
@@ -437,8 +444,8 @@ class FField:
         (c,d) = self.FullDivision(a,b,aDegree,bDegree)
         recon = self.Add(d, self.Multiply(c,b))
         assert (recon == a), ('TestFullDivision failed: a='
-                              + str(a) + ', b=' + str(b) + ', c='
-                              + str(c) + ', d=' + str(d) + ', recon=', recon)
+                              + repr(a) + ', b=' + repr(b) + ', c='
+                              + repr(c) + ', d=' + repr(d) + ', recon=', recon)
 
     def TestInverse(self):
         """
@@ -450,9 +457,9 @@ class FField:
         a = self.GetRandomElement(nonZero=1)
         aInv = self.Inverse(a)
         prod = self.Multiply(a,aInv)
-        assert 1 == prod, ('TestInverse failed:' + 'a=' + str(a) + ', aInv='
-                           + str(aInv) + ', prod=' + str(prod),
-                           'gen=' + str(self.generator))
+        assert 1 == prod, ('TestInverse failed:' + 'a=' + repr(a) + ', aInv='
+                           + repr(aInv) + ', prod=' + repr(prod),
+                           'gen=' + repr(self.generator))
 
 class LUT:
     """
@@ -468,12 +475,12 @@ class FElement:
     Note that before creating FElement objects you must first
     create an FField object.  For example,
 
->>> from pyfinite import ffield
->>> F = FField(5)
->>> e1 = FElement(F,7)
+>>> import ffield
+>>> F = ffield.FField(5)
+>>> e1 = ffield.FElement(F,7)
 >>> e1
 x^2 + x^1 + 1
->>> e2 = FElement(F,19)
+>>> e2 = ffield.FElement(F,19)
 >>> e2
 x^4 + x^1 + 1
 >>> e3 = e1 + e2
@@ -520,12 +527,13 @@ x^4 + x^3
                                                 self.field.FindDegree(self.f),
                                                 self.field.FindDegree(o.f))[0])
 
-    def __div__(self,other):
+    def __truediv__(self,other):
         assert self.field == other.field
         return FElement(self.field,self.field.Divide(self.f,other.f))
 
-    def __truediv__(self, other):
-        return self.__div__(other)
+    def __div__(self, *args, **kwargs):
+        "syntatic sugar for calling self.__truediv__(*args, **kwargs)"
+        return self.__truediv__(*args, **kwargs)
 
     def __str__(self):
         return self.field.ShowPolynomial(self.f)
@@ -547,7 +555,7 @@ def FullTest(testsPerField=10,sizeList=None):
     """
 
     if (None == sizeList):
-        sizeList = list(gPrimitivePolys.keys())
+        sizeList = gPrimitivePolys.keys()
     for i in sizeList:
         F = FField(i)
         for j in range(testsPerField):
@@ -662,8 +670,9 @@ o  Leverages Python arbitrary precision code for large fields.
    code in most languages.  Since Python has built in support for
    arbitrary precision integers, you can make this code work for
    arbitrary field sizes provided you operate on longs instead of
-   ints.  That is if you give as input numbers like
-   0L, 1L, 1L << 55, etc., most of the code should work.
+   ints.  In python 3 this is automatic, but in python2 you need
+   to give as input numbers like 0L, 1L, 1L << 55, etc. to force
+   using longs.
 
 --------------------------------------------------------------------
                             BASIC DESIGN
@@ -734,7 +743,7 @@ The FField class has a number of built in testing functions such as
 TestFullDivision, TestInverse.  The simplest thing to
 do is to call the FullTest method.
 
->>> from pyfinite import ffield
+>>> import ffield
 >>> ffield.FullTest(sizeList=None,testsPerField=100)
 
 # To decrease the testing time you can either decrease the testsPerField
@@ -757,7 +766,8 @@ __test__ = {
 }
 
 def _test():
-    return doctest.testmod()
+    import doctest, ffield
+    return doctest.testmod(ffield)
 
 if __name__ == "__main__":
     print('Starting automated tests (this may take a while)')

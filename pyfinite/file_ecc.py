@@ -1,5 +1,8 @@
-"""File erasure correction codes.
 
+# Copyright Emin Martinian 2002.  See below for license terms.
+# Version Control Info: $Id: file_ecc.py,v 1.5 2008-01-05 22:08:44 emin Exp $
+
+__doc__ = """
 This package implements an erasure correction code for files.
 Specifically it lets you take a file F and break it into N
 pieces (which are named F.p_0, F.p_1, ..., F.p_N-1) such that
@@ -33,29 +36,28 @@ license_doc describes the license and lack of warranty.
 
 The following is an example of how to use this file:
 
->>> import os, tempfile
->>> from pyfinite import file_ecc
->>> testFile = file_ecc.__file__  # A reasonable size file for testing.
->>> prefix = tempfile.mktemp()    # Prefix for shares of file.
+>>> import file_ecc
+>>> testFile = '/bin/ls'      # A reasonable size file for testing.
+>>> prefix = '/tmp/ls_backup' # Prefix for shares of file.
 >>> names = file_ecc.EncodeFile(testFile,prefix,15,11) # break into N=15 pieces
 
 # Imagine that only pieces [0,1,5,4,13,8,9,10,11,12,14] are available.
->>> decList = [prefix + '.p_' + str(x) for x in [0,1,5,4,13,8,9,10,11,12,14]]
->>> decodedFile = tempfile.mktemp(suffix='decoded')
+>>> decList = [prefix + '.p_' + repr(x) for x in [0,1,5,4,13,8,9,10,11,12,14]]
+
+>>> decodedFile = '/tmp/ls.r' # Choose where we want reconstruction to go.
 >>> file_ecc.DecodeFiles(decList,decodedFile)
 >>> fd1 = open(testFile,'rb')
 >>> fd2 = open(decodedFile,'rb')
 >>> fd1.read() == fd2.read()
-True
->>> ignore = fd1.close(), fd2.close()
->>> ignore = [os.remove(fn) for fn in (names + [decodedFile])]
+1
 """
 
-import os
-import struct
-import doctest
+
+
+from rs_code import RSCode
 from array import array
-from pyfinite.rs_code import RSCode
+
+import os, struct, string
 
 headerSep = '|'
 
@@ -63,12 +65,14 @@ def GetFileSize(fname):
     return os.stat(fname)[6]
 
 def MakeHeader(fname,n,k,size):
-    return headerSep.join(['RS_PARITY_PIECE_HEADER','FILE',fname,
-                           'n',repr(n),'k',repr(k),'size',repr(size),'piece'],
-                          ) + headerSep
+    return headerSep.join([
+        'RS_PARITY_PIECE_HEADER','FILE',fname,
+        'n',repr(n),'k',repr(k),'size',repr(size),'piece']) + headerSep
 
 def ParseHeader(header):
-    return header.decode('UTF8').split(headerSep)
+    if isinstance(header, bytes):
+        header = header.decode('UTF8')
+    return header.split(headerSep)
 
 def ReadEncodeAndWriteBlock(readSize,inFD,outFD,code):
     buffer = array('B')
@@ -108,10 +112,10 @@ def EncodeFile(fname,prefix,n,k):
         outFD[i].write((header + repr(i) + '\n').encode('UTF8'))
 
     if (k == 1): # just doing repetition coding
-        my_str = inFD.read(1024)
-        while (my_str):
-            list(map( lambda x: x.write(my_str.encode('UTF8'), outFD)))
-            my_str = inFD.read(256)
+        str = inFD.read(1024)
+        while (str):
+            dummy = [x.write(str) for x in outFD]
+            str = inFD.read(256)
     else: # do the full blown RS encodding
         for i in range(0, (inSize//k)*k,k):
             ReadEncodeAndWriteBlock(k,inFD,outFD,code)
@@ -130,12 +134,13 @@ def ExtractPieceNums(fnames,headers):
         if (l[i][0] != 'RS_PARITY_PIECE_HEADER' or
             l[i][2] != l[0][2] or l[i][4] != l[0][4] or
             l[i][6] != l[0][6] or l[i][8] != l[0][8]):
-            raise Exception('File ' + repr(fnames[i]) + ' has incorrect header.')
+            raise Exception(
+                'File ' + repr(fnames[i]) + ' has incorrect header.')
         pieceNums[i] = int(l[i][10])
     (n,k,size) = (int(l[0][4]),int(l[0][6]),int(l[0][8]))
     if (len(pieceNums) < k):
-        raise Exception('Not enough parity for decoding; needed '
-                          + repr(l[0][6]) + ' got ' + repr(len(fnames)) + '.')
+        raise Exception(('Not enough parity for decoding; needed '
+                         + repr(l[0][6]) + ' got ' + repr(len(fnames)) + '.'))
     return (n,k,size,pieceNums)
 
 def ReadDecodeAndWriteBlock(writeSize,inFDs,outFD,code):
@@ -169,10 +174,9 @@ def DecodeFiles(fnames,outName):
         ReadDecodeAndWriteBlock(k,inFDs,outFD,code)
     if ((inSize%k)>0):
         ReadDecodeAndWriteBlock(inSize%k,inFDs,outFD,code)
-    outFD.close()
 
 license_doc = """
-  This code was originally written by Emin Martinian (emin@allegro.mit.edu).
+  This code was originally written by Emin Martinian (emin@alum.mit.edu).
   You may copy, modify, redistribute in source or binary form as long
   as credit is given to the original author.  Specifically, please
   include some kind of comment or docstring saying that Emin Martinian
@@ -209,7 +213,8 @@ POSSIBILITY OF SUCH DAMAGES.
 # check examples in docstrings.
 
 def _test():
-    return doctest.testmod()
+    import doctest, file_ecc
+    return doctest.testmod(file_ecc)
 
 if __name__ == "__main__":
     _test()

@@ -1,5 +1,6 @@
 
-# Copyright Emin Martinian 2002--2018.  See below for license terms.
+# Copyright Emin Martinian 2002.  See below for license terms.
+# Version Control Info: $Id: rs_code.py,v 1.4 2008-01-05 22:08:45 emin Exp $
 
 """
 This package implements the RSCode class designed to do
@@ -12,12 +13,10 @@ docstrings provide detailed information on various topics.
 
 """
 
+import ffield
+import genericmatrix
 import math
 import doctest
-
-from pyfinite import ffield
-from pyfinite import genericmatrix
-
 
 
 class RSCode:
@@ -34,14 +33,14 @@ class RSCode:
     RandomTest
 
     A breif example of how to use the code follows:
-    
->>> from pyfinite import rs_code
 
-# Create a coder for an (n,k) = (16,8) code and test 
+>>> import rs_code
+
+# Create a coder for an (n,k) = (16,8) code and test
 # decoding for a simple erasure pattern.
 
->>> C = rs_code.RSCode(16,8) 
->>> inVec = range(8)         
+>>> C = rs_code.RSCode(16,8)
+>>> inVec = list(range(8))
 >>> codedVec = C.Encode(inVec)
 >>> receivedVec = list(codedVec)
 
@@ -72,7 +71,7 @@ class RSCode:
         Notes:      The last parameters, log2FieldSize, systematic
                     and shouldUseLUT are optional.
 
-                    The log2FieldSize parameter 
+                    The log2FieldSize parameter
                     represents the base 2 logarithm of the field size.
                     If it is omitted, the field GF(2^p) is used where
                     p is the smalles integer where 2^p >= n.
@@ -105,8 +104,8 @@ class RSCode:
                + '  over GF(2^' + repr(self.field.n) + ')\n' +
                repr(self.encoderMatrix) + '\n' + '>')
         return rep
-               
-    def CreateEncoderMatrix(self):                   
+
+    def CreateEncoderMatrix(self):
         self.encoderMatrix = genericmatrix.GenericMatrix(
             (self.n,self.k),0,1,self.field.Add,self.field.Subtract,
             self.field.Multiply,self.field.Divide)
@@ -117,21 +116,21 @@ class RSCode:
                 self.encoderMatrix[i,j] = term
                 term = self.field.Multiply(term,i)
 
-    
+
     def Encode(self,data):
         """
         Function:       Encode(data)
         Purpose:        Encode a list of length k into length n.
         """
         assert len(data)==self.k, 'Encode: input data must be size k list.'
-        
+
         return self.encoderMatrix.LeftMulColumnVec(data)
 
     def PrepareDecoder(self,unErasedLocations):
         """
         Function:       PrepareDecoder(erasedTerms)
         Description:    The input unErasedLocations is a list of the first
-                        self.k elements of the codeword which were 
+                        self.k elements of the codeword which were
                         NOT erased.  For example, if the 0th, 5th,
                         and 7th symbols of a (16,5) code were erased,
                         then PrepareDecoder([1,2,3,4,6]) would
@@ -139,7 +138,7 @@ class RSCode:
         """
         if (len(unErasedLocations) != self.k):
             raise ValueError('input must be exactly length k')
-        
+
         limitedEncoder = genericmatrix.GenericMatrix(
             (self.k,self.k),0,1,self.field.Add,self.field.Subtract,
             self.field.Multiply,self.field.Divide)
@@ -180,10 +179,10 @@ class RSCode:
                 unErasedTerms.append(data[i])
         self.PrepareDecoder(unErasedLocations[0:self.k])
         return self.Decode(unErasedTerms[0:self.k])
-        
+
     def RandomTest(self,numTests):
         import random
-        
+
         maxErasures = self.n-self.k
         for i in range(numTests):
             inVec = list(range(self.k))
@@ -244,4 +243,4 @@ def _test():
 
 if __name__ == "__main__":
     _test()
-    print('Tests finished')
+    print('Tests Finished')

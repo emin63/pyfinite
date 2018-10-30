@@ -1,5 +1,6 @@
 
-# Copyright Emin Martinian 2002--2018.  See below for license terms.
+# Copyright Emin Martinian 2002.  See below for license terms.
+# Version Control Info: $Id: genericmatrix.py,v 1.5 2008-01-05 22:08:44 emin Exp $
 
 """
 This package implements the GenericMatrix class to provide matrix
@@ -20,9 +21,9 @@ The following docstrings provide detailed information on various topics:
 
 """
 
-import doctest
-import operator
 from functools import reduce
+import operator
+
 
 class GenericMatrix:
 
@@ -61,7 +62,7 @@ class GenericMatrix:
     A quick and dirty example of how to use the GenericMatrix class
     for matricies of floats is provided below.
     
->>> from pyfinite import genericmatrix
+>>> import genericmatrix
 >>> v = genericmatrix.GenericMatrix((3,3))
 >>> v.SetRow(0,[0.0, -1.0, 1.0])
 >>> v.SetRow(1,[1.0, 1.0, 1.0])
@@ -229,7 +230,8 @@ ValueError: matrix not invertible
                                      self.zeroElement)
 
         for i in range(self.rows):
-            self.data.append(list(map(fillMode,[i]*self.cols,list(range(self.cols)))))
+            self.data.append(list(map(
+                fillMode,[i]*self.cols,range(self.cols))))
 
     def MakeSimilarMatrix(self,size,fillMode):
         """
@@ -274,9 +276,8 @@ ValueError: matrix not invertible
                                
         for i in range(self.rows):
             for j in range(other.cols):
-                result.data[i][j] = reduce(self.add,
-                                           list(map(self.mul,self.data[i],
-                                               other.GetColumn(j))))
+                result.data[i][j] = reduce(self.add, map(
+                    self.mul,self.data[i], other.GetColumn(j)))
         return result
 
     def __add__(self,other):
@@ -298,15 +299,16 @@ ValueError: matrix not invertible
                                              other.data[i][j])
         return result
 
-    def __setitem__ (self, xxx_todo_changeme, data):
+    def __setitem__ (self, coords, data):
         "__setitem__((x,y),data) sets item row x and column y to data."
-        (x,y) = xxx_todo_changeme
-        self.data[x][y] = data
+        x_coord, y_coord = coords
+        self.data[x_coord][y_coord] = data
 
-    def __getitem__ (self, xxx_todo_changeme1):
+    def __getitem__ (self, coords):
         "__getitem__((x,y)) gets item at row x and column y."
-        (x,y) = xxx_todo_changeme1
-        return self.data[x][y]
+        x_coord, y_coord = coords
+        return self.data[x_coord][y_coord]
+
 
     def Size (self):
         "returns (rows, columns)"
@@ -380,7 +382,7 @@ ValueError: matrix not invertible
         result = self.MakeSimilarMatrix((self.rows-(rowEnd-rowStart),
                                          self.cols-(colEnd-colStart)),'e')
 
-        for i in list(range(0,rowStart)) + list(range(rowEnd,self.rows)):
+        for i in range(0,rowStart) + range(rowEnd,self.rows):
             result.data.append(list(self.data[i][0:colStart] +
                                     self.data[i][colEnd:]))
 
@@ -419,8 +421,8 @@ ValueError: matrix not invertible
         Multiply row i by m and add to row j.
         """
         self.data[j] = list(map(self.add,
-                           list(map(self.mul,[m]*self.cols,self.data[i])),
-                           self.data[j]))
+                                map(self.mul,[m]*self.cols,self.data[i]),
+                                self.data[j]))
 
     def LeftMulColumnVec(self,colVec):
         """
@@ -436,7 +438,7 @@ ValueError: matrix not invertible
             raise ValueError('dimension mismatch')
         result = list(range(self.rows))
         for r in range(self.rows):
-            result[r] = reduce(self.add,list(map(self.mul,self.data[r],colVec)))
+            result[r] = reduce(self.add,map(self.mul,self.data[r],colVec))
         return result
 
     def FindRowLeader(self,startRow,c):
@@ -666,7 +668,7 @@ ValueError: matrix not invertible
         The following is an example of how to use Solve:
 
 >>> # Floating point example
->>> from pyfinite import genericmatrix
+>>> import genericmatrix
 >>> A = genericmatrix.GenericMatrix(size=(2,5),str=lambda x: '%.4f' % x)
 >>> A.SetRow(0,[0.0, 0.0, 0.160, 0.550, 0.280])
 >>> A.SetRow(1,[0.0, 0.0, 0.745, 0.610, 0.190])
@@ -724,7 +726,7 @@ def DotProduct(mul,add,x,y):
                  add as the multiplication and addition operations.
     """
     assert len(x) == len(y), 'sizes do not match'
-    return reduce(add,list(map(mul,x,y)))
+    return reduce(add,map(mul,x,y))
 
 class GenericMatrixTester:
     def DoTests(self,numTests,sizeList):
@@ -783,10 +785,10 @@ class GenericMatrixTester:
                 colToKill = random.randrange(s+extraEquations)
                 for r in range(m.rows):
                     m[r,colToKill] = 0.0
-            b = [random.random() for x in range(s)]
+            b = list(map(lambda x: random.random(), range(s)))
             x = m.Solve(b)
             z = m.LeftMulColumnVec(x)
-            diff = reduce(lambda xx,yy:xx+yy, list(map(lambda aa,bb:abs(aa-bb),b,z)))
+            diff = reduce(lambda xx,yy:xx+yy, map(lambda aa,bb:abs(aa-bb),b,z))
             assert diff < 1e-6, ('offenders: m = ' + repr(m) + '\nx = ' + repr(x)
                                  + '\nb = ' + repr(b) + '\ndiff = ' + repr(diff))
 
@@ -841,7 +843,7 @@ RandomSolveTest, and RandomDetTest which generate random floating
 point values and test the appropriate routines.  The simplest way to
 run these tests is via
 
->>> from pyfinite import genericmatrix
+>>> import genericmatrix
 >>> t = genericmatrix.GenericMatrixTester()
 >>> t.DoTests(100,[1,2,3,4,5,10])
 
@@ -864,8 +866,9 @@ __test__ = {
 }
 
 def _test():
-    return doctest.testmod()
+    import doctest, genericmatrix
+    return doctest.testmod(genericmatrix)
 
 if __name__ == "__main__":
     _test()
-    print('Tests Passed.')
+    print('Tests Finished.')
