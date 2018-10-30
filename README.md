@@ -87,7 +87,7 @@ the `rs_code` and `file_ecc` modules via something like
 ```
 
 
-# Apology
+# Future work
 
 This code was written many years ago and hosted on an old MIT web site
 under the name `py_ecc` before being moved to github. It is in need of
