@@ -281,7 +281,7 @@ ValueError: matrix not invertible
         return result
 
     def __add__(self,other):
-        if (self.cols != other.rows):
+        if (self.cols != other.cols or self.rows != other.rows):
             raise ValueError("dimension mismatch")
         result = self.MakeSimilarMatrix(size=self.Size(),fillMode='z')
         for i in range(self.rows):
@@ -742,6 +742,7 @@ class GenericMatrixTester:
             self.RandomLUPTest(size,numTests)
             self.RandomSolveTest(size,numTests)
             self.RandomDetTest(size,numTests)
+            self.RandomAddTest(size, size+1, numTests)
 
 
     def MakeRandom(self,s):
@@ -758,6 +759,14 @@ class GenericMatrixTester:
                 if (abs(m[i,j]) > r):
                     r = abs(m[i,j])
         return r
+
+    def RandomAddTest(self, rows, cols, times):
+        "Do some random tests to check addition and subtraction."
+        for i in range(times):
+            first = self.MakeRandom((rows, cols))
+            second = self.MakeRandom((rows, cols))
+            msum = first + second
+            assert self.MatAbs(msum - first - second) < 1e-6
 
     def RandomInverseTest(self,s,n):
         ident = GenericMatrix(size=(s,s),fillMode='i')
