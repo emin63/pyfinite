@@ -6,6 +6,7 @@ See LICENSE at the top-level of this distribution for more information.
 """
 
 # see also setup.cfg
+import io
 
 from os import path
 
@@ -18,7 +19,7 @@ def get_readme():
     'Get the long description from the README file'
 
     here = path.abspath(path.dirname(__file__))
-    with open(path.join(here, 'README.rst'), encoding='utf-8') as my_fd:
+    with io.open(path.join(here, 'README.rst'), encoding='utf-8') as my_fd:
         result = my_fd.read()
 
     return result
