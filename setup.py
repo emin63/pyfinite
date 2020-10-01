@@ -16,13 +16,14 @@ from pyfinite import VERSION
 
 
 def get_readme():
-    'Get the long description from the README file'
+    """Get the long description from the README file"""
 
     here = path.abspath(path.dirname(__file__))
     with io.open(path.join(here, 'README.rst'), encoding='utf-8') as my_fd:
         result = my_fd.read()
 
     return result
+
 
 setup(
     name='pyfinite',

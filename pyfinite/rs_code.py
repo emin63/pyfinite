@@ -36,7 +36,7 @@ class RSCode:
 
 >>> import rs_code
 
-# Create a coder for an (n,k) = (16,8) code and test
+# Create a coder for an n, k = 16, 8 code and test
 # decoding for a simple erasure pattern.
 
 >>> C = rs_code.RSCode(16,8)
@@ -45,7 +45,7 @@ class RSCode:
 >>> receivedVec = list(codedVec)
 
 # now erase some entries in the encoded vector by setting them to None
->>> receivedVec[3] = None; receivedVec[9] = None; receivedVec[12] = None
+>>> receivedVec[3] = receivedVec[9] = receivedVec[12] = None
 >>> receivedVec
 [0, 1, 2, None, 4, 5, 6, 7, 8, None, 10, 11, None, 13, 14, 15]
 >>> decVec = C.DecodeImmediate(receivedVec)
@@ -54,100 +54,101 @@ class RSCode:
 
 # Now try the random testing method for more complete coverage.
 # Note this will take a while.
->>> for k in range(1,8):
-...     for p in range(1,12):
-...         C = rs_code.RSCode(k+p,k)
-...         C.RandomTest(25)
->>> for k in range(1,8):
-...     for p in range(1,12):
-...         C = rs_code.RSCode(k+p,k,systematic=0)
-...         C.RandomTest(25)
+>>> for k in range(1, 8):
+...     for p in range(1, 12):
+...         c = rs_code.RSCode(k+p, k)
+...         c.RandomTest(25)
+>>> for k in range(1, 8):
+...     for p in range(1, 12):
+...         c = rs_code.RSCode(k+p, k, systematic=0)
+...         c.RandomTest(25)
 """
 
-    def __init__(self,n,k,log2FieldSize=-1,systematic=1,shouldUseLUT=-1):
+    def __init__(self, n, k, log2FieldSize=-1, systematic=1, shouldUseLUT=-1):
         """
-        Function:   __init__(n,k,log2FieldSize,systematic,shouldUseLUT)
-        Purpose:    Create a Reed-Solomon coder for an (n,k) code.
+        Function:   __init__(n, k, log2FieldSize, systematic, shouldUseLUT)
+        Purpose:    Create a Reed-Solomon coder for an (n, k) code.
         Notes:      The last parameters, log2FieldSize, systematic
                     and shouldUseLUT are optional.
 
                     The log2FieldSize parameter
                     represents the base 2 logarithm of the field size.
                     If it is omitted, the field GF(2^p) is used where
-                    p is the smalles integer where 2^p >= n.
+                    p is the smallest integer where 2^p >= n.
 
                     If systematic is true then a systematic encoder
                     is created (i.e. one where the first k symbols
                     of the encoded result always match the data).
 
-                    If shouldUseLUT = 1 then a lookup table is used for
+                    If shouldUseLUT == 1 then a lookup table is used for
                     computing finite field multiplies and divides.
-                    If shouldUseLUT = 0 then no lookup table is used.
-                    If shouldUseLUT = -1 (the default), then the code
+                    If shouldUseLUT == 0 then no lookup table is used.
+                    If shouldUseLUT == -1 (the default), then the code
                     decides when a lookup table should be used.
         """
-        if (log2FieldSize < 0):
+        if log2FieldSize < 0:
             log2FieldSize = int(math.ceil(math.log(n)/math.log(2)))
-        self.field = ffield.FField(log2FieldSize,useLUT=shouldUseLUT)
+        self.field = ffield.FField(log2FieldSize, useLUT=shouldUseLUT)
         self.n = n
         self.k = k
         self.fieldSize = 1 << log2FieldSize
+        self.encoderMatrix = None
+        self.decoderMatrix = None
         self.CreateEncoderMatrix()
-        if (systematic):
+        if systematic:
             self.encoderMatrix.Transpose()
             self.encoderMatrix.LowerGaussianElim()
             self.encoderMatrix.UpperInverse()
             self.encoderMatrix.Transpose()
 
     def __repr__(self):
-        rep = ('<RSCode (n,k) = (' + repr(self.n) +', ' + repr(self.k) + ')'
+        rep = ('<RSCode (n, k) = (' + repr(self.n) + ', ' + repr(self.k) + ')'
                + '  over GF(2^' + repr(self.field.n) + ')\n' +
                repr(self.encoderMatrix) + '\n' + '>')
         return rep
 
     def CreateEncoderMatrix(self):
         self.encoderMatrix = genericmatrix.GenericMatrix(
-            (self.n,self.k),0,1,self.field.Add,self.field.Subtract,
-            self.field.Multiply,self.field.Divide)
-        self.encoderMatrix[0,0] = 1
-        for i in range(0,self.n):
+            (self.n, self.k), 0, 1, self.field.Add, self.field.Subtract,
+            self.field.Multiply, self.field.Divide)
+        self.encoderMatrix[0, 0] = 1
+        for i in range(0, self.n):
             term = 1
             for j in range(0, self.k):
-                self.encoderMatrix[i,j] = term
-                term = self.field.Multiply(term,i)
+                self.encoderMatrix[i, j] = term
+                term = self.field.Multiply(term, i)
 
-
-    def Encode(self,data):
+    def Encode(self, data):
         """
         Function:       Encode(data)
         Purpose:        Encode a list of length k into length n.
         """
-        assert len(data)==self.k, 'Encode: input data must be size k list.'
+        assert len(data) == self.k, 'Encode: input data must be size k list.'
 
         return self.encoderMatrix.LeftMulColumnVec(data)
 
-    def PrepareDecoder(self,unErasedLocations):
+    def PrepareDecoder(self, unErasedLocations):
         """
         Function:       PrepareDecoder(erasedTerms)
         Description:    The input unErasedLocations is a list of the first
                         self.k elements of the codeword which were
                         NOT erased.  For example, if the 0th, 5th,
-                        and 7th symbols of a (16,5) code were erased,
-                        then PrepareDecoder([1,2,3,4,6]) would
+                        and 7th symbols of a (16, 5) code were erased,
+                        then PrepareDecoder([1, 2, 3, 4, 6]) would
                         properly prepare for decoding.
         """
-        if (len(unErasedLocations) != self.k):
+        if len(unErasedLocations) != self.k:
             raise ValueError('input must be exactly length k')
 
-        limitedEncoder = genericmatrix.GenericMatrix(
-            (self.k,self.k),0,1,self.field.Add,self.field.Subtract,
-            self.field.Multiply,self.field.Divide)
-        for i in range(0,self.k):
-            limitedEncoder.SetRow(
-                i,self.encoderMatrix.GetRow(unErasedLocations[i]))
-        self.decoderMatrix = limitedEncoder.Inverse()
+        limited_encoder = genericmatrix.GenericMatrix(
+            (self.k, self.k), 0, 1, self.field.Add, self.field.Subtract,
+            self.field.Multiply, self.field.Divide)
+        for i in range(0, self.k):
+            limited_encoder.SetRow(
+                i, self.encoderMatrix.GetRow(unErasedLocations[i]))
+        self.decoderMatrix = limited_encoder.Inverse()
 
-    def Decode(self,unErasedTerms):
+    def Decode(self, unErasedTerms):
         """
         Function:       Decode(unErasedTerms)
         Purpose:        Use the
@@ -155,7 +156,7 @@ class RSCode:
         """
         return self.decoderMatrix.LeftMulColumnVec(unErasedTerms)
 
-    def DecodeImmediate(self,data):
+    def DecodeImmediate(self, data):
         """
         Function:       DecodeImmediate(data)
         Description:    Takes as input a data vector of length self.n
@@ -163,42 +164,43 @@ class RSCode:
                         returns the decoded result provided that
                         at least self.k symbols are not None.
 
-                        For example, for an (n,k) = (6,4) code, a
+                        For example, for an n, k = 6, 4 code, a
                         decodable input vector would be
                         [2, 0, None, 1, 2, None].
         """
 
-        if (len(data) != self.n):
+        if len(data) != self.n:
             raise ValueError('input must be a length n list')
 
-        unErasedLocations = []
-        unErasedTerms = []
+        un_erased_locations = []
+        un_erased_terms = []
         for i in range(self.n):
-            if (None != data[i]):
-                unErasedLocations.append(i)
-                unErasedTerms.append(data[i])
-        self.PrepareDecoder(unErasedLocations[0:self.k])
-        return self.Decode(unErasedTerms[0:self.k])
+            if data[i] is not None:
+                un_erased_locations.append(i)
+                un_erased_terms.append(data[i])
+        self.PrepareDecoder(un_erased_locations[0:self.k])
+        return self.Decode(un_erased_terms[0:self.k])
 
-    def RandomTest(self,numTests):
+    def RandomTest(self, numTests):
         import random
 
-        maxErasures = self.n-self.k
+        max_erasures = self.n-self.k
         for i in range(numTests):
-            inVec = list(range(self.k))
+            in_vec = list(range(self.k))
             for j in range(self.k):
-                inVec[j] = random.randint(0, (1<<self.field.n)-1)
-            codedVec = self.Encode(inVec)
-            numErasures = random.randint(0,maxErasures)
-            for j in range(numErasures):
-                j = random.randint(0,self.n-1)
-                while(codedVec[j] == None):
-                    j = random.randint(0,self.n-1)
-                codedVec[j] = None
-            decVec = self.DecodeImmediate(codedVec)
-            assert decVec == inVec, ('inVec = ' + repr(inVec)
-                                     + '\ncodedVec = ' + repr(codedVec)
-                                     + '\ndecVec = ' + repr(decVec))
+                in_vec[j] = random.randint(0, (1 << self.field.n)-1)
+            coded_vec = self.Encode(in_vec)
+            num_erasures = random.randint(0, max_erasures)
+            for j in range(num_erasures):
+                j = random.randint(0, self.n-1)
+                while coded_vec[j] is None:
+                    j = random.randint(0, self.n-1)
+                coded_vec[j] = None
+            dec_vec = self.DecodeImmediate(coded_vec)
+            assert dec_vec == in_vec, ('in_vec = ' + repr(in_vec)
+                                       + '\ncoded_vec = ' + repr(coded_vec)
+                                       + '\ndec_vec = ' + repr(dec_vec))
+
 
 license_doc = """
   This code was originally written by Emin Martinian (emin@allegro.mit.edu).
@@ -207,7 +209,7 @@ license_doc = """
   include some kind of comment or docstring saying that Emin Martinian
   was one of the original authors.  Also, if you publish anything based
   on this work, it would be nice to cite the original author and any
-  other contributers.
+  other contributors.
 
   There is NO WARRANTY for this software just as there is no warranty
   for GNU software (although this is not GNU software).  Specifically
@@ -237,9 +239,9 @@ POSSIBILITY OF SUCH DAMAGES.
 
 # The following code is used to make the doctest package
 # check examples in docstrings.
-
 def _test():
     return doctest.testmod()
+
 
 if __name__ == "__main__":
     _test()
