@@ -30,7 +30,7 @@ available recovery can occur.  Thus if you placed each piece on a
 separate disk, you could recover data as if any combination of 4 or
 less disks fail.
 
-The docstrings for the functions EncodeFile and DecodeFiles
+The docstrings for the functions encode_file and decode_files
 provide detailed information on usage and the docstring
 license_doc describes the license and lack of warranty.
 
@@ -40,13 +40,13 @@ The following is an example of how to use this file:
 >>> test_file = '/bin/ls'      # A reasonable size file for testing.
 >>> prefix = '/tmp/ls_backup'  # Prefix for shares of file.
 >>> # break into N=15 pieces
->>> names = file_ecc.EncodeFile(test_file, prefix, 15, 11)
+>>> names = file_ecc.encode_file(test_file, prefix, 15, 11)
 
 # Imagine that only pieces 0, 1, 5, 4, 13, 8, 9, 10, 11, 12 & 14 are available.
 >>> dec_list = [prefix + '.p_' + repr(x) for x in [0,1,5,4,13,8,9,10,11,12,14]]
 
 >>> decoded_file = '/tmp/ls.r'  # Choose where we want reconstruction to go.
->>> file_ecc.DecodeFiles(dec_list, decoded_file)
+>>> file_ecc.decode_files(dec_list, decoded_file)
 >>> fd1 = open(test_file,'rb')
 >>> fd2 = open(decoded_file,'rb')
 >>> fd1.read() == fd2.read()
@@ -63,52 +63,52 @@ from rs_code import RSCode
 headerSep = '|'
 
 
-def GetFileSize(fname):
-    return os.stat(fname)[6]
+def get_file_size(filename):
+    return os.stat(filename)[6]
 
 
-def MakeHeader(fname, n, k, size):
+def make_header(filename, n, k, size):
     return headerSep.join([
-        'RS_PARITY_PIECE_HEADER', 'FILE', fname,
+        'RS_PARITY_PIECE_HEADER', 'FILE', filename,
         'n', repr(n), 'k', repr(k), 'size', repr(size), 'piece']) + headerSep
 
 
-def ParseHeader(header):
+def parse_header(header):
     if isinstance(header, bytes):
         header = header.decode('UTF8')
     return header.split(headerSep)
 
 
-def ReadEncodeAndWriteBlock(readSize, inFD, outFD, code):
+def read_encode_and_write_block(read_size, in_fd, out_fd, code):
     buffer = array('B')
-    buffer.fromfile(inFD, readSize)
-    for i in range(readSize, code.k):
+    buffer.fromfile(in_fd, read_size)
+    for i in range(read_size, code.k):
         buffer.append(0)
-    code_vec = code.Encode(buffer)
+    code_vec = code.encode(buffer)
     for j in range(code.n):
-        outFD[j].write(struct.pack('B', code_vec[j]))
+        out_fd[j].write(struct.pack('B', code_vec[j]))
 
 
-def EncodeFile(fname, prefix, n, k):
+def encode_file(filename, prefix, n, k):
     """
-    Function:     EncodeFile(fname, prefix, n, k)
-    Description:  Encodes the file named by fname into n pieces named
+    Function:     encode_file(filename, prefix, n, k)
+    Description:  Encodes the file named by filename into n pieces named
                   prefix.p_0, prefix.p_1, ..., prefix.p_n-1.  At least
-                  k of these pieces are needed for recovering fname.
-                  Each piece is roughly the size of fname / k (there
+                  k of these pieces are needed for recovering filename.
+                  Each piece is roughly the size of filename / k (there
                   is a very small overhead due to some header information).
 
                   Returns a list containing names of files for the pieces.
 
                   Note n and k must satisfy 0 < k < n < 257.
-                  Use the DecodeFiles function for decoding.
+                  Use the decode_files function for decoding.
     """
     file_list = []
     if n > 256 or k >= n or k <= 0:
         raise Exception('Invalid (n, k), need 0 < k < n < 257.')
-    in_fd = open(fname, 'rb')
-    in_size = GetFileSize(fname)
-    header = MakeHeader(fname, n, k, in_size)
+    in_fd = open(filename, 'rb')
+    in_size = get_file_size(filename)
+    header = make_header(filename, n, k, in_size)
     code = RSCode(n, k, 8, shouldUseLUT=-(k != 1))
     out_fd = list(range(n))
     for i in range(n):
@@ -124,64 +124,64 @@ def EncodeFile(fname, prefix, n, k):
             s = in_fd.read(256)
     else:  # do the full blown RS encoding
         for i in range(0, (in_size//k)*k, k):
-            ReadEncodeAndWriteBlock(k, in_fd, out_fd, code)
+            read_encode_and_write_block(k, in_fd, out_fd, code)
         
         if (in_size % k) > 0:
-            ReadEncodeAndWriteBlock(in_size % k, in_fd, out_fd, code)
+            read_encode_and_write_block(in_size % k, in_fd, out_fd, code)
 
     return file_list
 
 
-def ExtractPieceNums(fnames, headers):
-    li = list(range(len(fnames)))
-    piece_nums = list(range(len(fnames)))
-    for i in range(len(fnames)):
-        li[i] = ParseHeader(headers[i])
-    for i in range(len(fnames)):
+def extract_piece_nums(filenames, headers):
+    li = list(range(len(filenames)))
+    piece_nums = list(range(len(filenames)))
+    for i in range(len(filenames)):
+        li[i] = parse_header(headers[i])
+    for i in range(len(filenames)):
         if (li[i][0] != 'RS_PARITY_PIECE_HEADER' or
                 li[i][2] != li[0][2] or li[i][4] != li[0][4] or
                 li[i][6] != li[0][6] or li[i][8] != li[0][8]):
             raise Exception(
-                'File ' + repr(fnames[i]) + ' has incorrect header.')
+                'File ' + repr(filenames[i]) + ' has incorrect header.')
         piece_nums[i] = int(li[i][10])
     n, k, size = int(li[0][4]), int(li[0][6]), int(li[0][8])
     if len(piece_nums) < k:
-        raise Exception(('Not enough parity for decoding; needed '
-                         + repr(li[0][6]) + ' got ' + repr(len(fnames)) + '.'))
+        raise Exception(('Not enough parity for decoding; needed ' +
+                         repr(li[0][6])+' got '+repr(len(filenames))+'.'))
     return n, k, size, piece_nums
 
 
-def ReadDecodeAndWriteBlock(writeSize, inFDs, outFD, code):
+def read_decode_and_write_block(write_size, in_fds, out_fd, code):
     buffer = array('B')
     for j in range(code.k):
-        buffer.fromfile(inFDs[j], 1)
-    result = code.Decode(buffer.tolist())
-    for j in range(writeSize):
-        outFD.write(struct.pack('B', result[j]))
+        buffer.fromfile(in_fds[j], 1)
+    result = code.decode(buffer.tolist())
+    for j in range(write_size):
+        out_fd.write(struct.pack('B', result[j]))
 
 
-def DecodeFiles(fnames, outName):
+def decode_files(filenames, out_name):
     """
-    Function:     DecodeFiles(fnames, outName)
-    Description:  Takes pieces of a file created using EncodeFiles and
+    Function:     decode_files(filenames, out_name)
+    Description:  Takes pieces of a file created using encode_files and
                   recovers the original file placing it in outName.
-                  The argument fnames must be a list of at least k
-                  file names generated using EncodeFiles.
+                  The argument filenames must be a list of at least k
+                  file names generated using encode_files.
     """
-    in_fds = list(range(len(fnames)))
-    headers = list(range(len(fnames)))
-    for i in range(len(fnames)):
-        in_fds[i] = open(fnames[i], 'rb')
+    in_fds = list(range(len(filenames)))
+    headers = list(range(len(filenames)))
+    for i in range(len(filenames)):
+        in_fds[i] = open(filenames[i], 'rb')
         headers[i] = in_fds[i].readline()
-    n, k, in_size, piece_nums = ExtractPieceNums(fnames, headers)
-    out_fd = open(outName, 'wb')
+    n, k, in_size, piece_nums = extract_piece_nums(filenames, headers)
+    out_fd = open(out_name, 'wb')
     code = RSCode(n, k, 8)
     dec_list = piece_nums[0:k]
-    code.PrepareDecoder(dec_list)
+    code.prepare_decoder(dec_list)
     for i in range(0, (in_size//k)*k, k):
-        ReadDecodeAndWriteBlock(k, in_fds, out_fd, code)
+        read_decode_and_write_block(k, in_fds, out_fd, code)
     if (in_size % k) > 0:
-        ReadDecodeAndWriteBlock(in_size % k, in_fds, out_fd, code)
+        read_decode_and_write_block(in_size % k, in_fds, out_fd, code)
 
 
 license_doc = """

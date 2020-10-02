@@ -43,15 +43,15 @@ or if you want to dive right in, you can try something like
 the following:
 ```python
 >>> from pyfinite import ffield
->>> F = ffield.FField(5) # create the field GF(2^5)
+>>> f = ffield.FField(5)  # create the field GF(2^5)
 >>> a = 7    # field elements are denoted as integers from 0 to 2^5-1
 >>> b = 15
->>> F.ShowPolynomial(a) # show the polynomial representation of a
+>>> f.show_polynomial(a)  # show the polynomial representation of a
 'x^2 + x^1 + 1'
->>> c = F.Multiply(a,b) # multiply a and b modulo the field generator
+>>> c = f.multiply(a,b)  # multiply a and b modulo the field generator
 >>> c
 8
->>> F.ShowPolynomial(c)
+>>> f.show_polynomial(c)
 'x^3'
 ```
 
@@ -59,16 +59,16 @@ Alternatively, you can jump into the `genericmatrix.py` package with
 something like:
 ```python
 >>> import genericmatrix
->>> v = genericmatrix.GenericMatrix((3,3))
->>> v.SetRow(0,[0.0, -1.0, 1.0])
->>> v.SetRow(1,[1.0, 1.0, 1.0])
->>> v.SetRow(2,[1.0, 1.0, -1.0])
+>>> v = genericmatrix.GenericMatrix((3, 3))
+>>> v.set_row(0, [0.0, -1.0,  1.0])
+>>> v.set_row(1, [1.0,  1.0,  1.0])
+>>> v.set_row(2, [1.0,  1.0, -1.0])
 >>> v
 <matrix
   0.0 -1.0  1.0
   1.0  1.0  1.0
   1.0  1.0 -1.0>
->>> vi = v.Inverse()
+>>> vi = v.inverse()
 ```
 
 Then for some real fun, you can try experimenting with generic matrix
@@ -81,7 +81,8 @@ info.
 Finally, if you just want erasure correction, see the docs for
 the `rs_code` and `file_ecc` modules via something like
 ```python
->>> import rs_code, file_ecc
+>>> import rs_code
+>>> import file_ecc
 >>> help(file_ecc)
 >>> help(rs_code)
 ```
