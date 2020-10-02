@@ -147,14 +147,14 @@ class FField:
     See documentation on the appropriate method for further details.
     """
 
-    def __init__(self, n, gen=0, use_lut=-1):
+    def __init__(self, p, gen=0, use_lut=-1):
         """
         This method constructs the field GF(2^p).  It takes one
-        required argument, n = p, and two optional arguments, gen,
+        required argument, p, and two optional arguments, gen,
         representing the coefficients of the generator polynomial
-        (of degree n) to use and use_lut describing whether to use
+        (of degree p) to use and use_lut describing whether to use
         a lookup table.  If no gen argument is provided, the
-        Conway Polynomial of degree n is obtained from the table
+        Conway Polynomial of degree p is obtained from the table
         g_primitive_polys.
 
         If use_lut == 1 then a lookup table is used for
@@ -166,21 +166,21 @@ class FField:
         Note that you can look at the generator for the field object
         f by looking at f.generator.
         """
-        self.n = n
+        self.p = p
         if gen:
             self.generator = gen
         else:
-            self.generator = self.convert_list_to_element(g_primitive_polys[n])
+            self.generator = self.convert_list_to_element(g_primitive_polys[p])
 
         self.lut = None
-        if use_lut == 1 or (use_lut == -1 and self.n < 10):  # use lookup table
+        if use_lut == 1 or (use_lut == -1 and self.p < 10):  # use lookup table
             self.unity = 1
             self.inverse = self._inverse_for_small_field
             self.prepare_lut()
             self.multiply = self._lut_multiply
             self.divide = self._lut_divide
             self.inverse = functools.partial(self._lut_divide, 1)
-        elif self.n < 15:
+        elif self.p < 15:
             self.unity = 1
             self.inverse = self._inverse_for_small_field
             self.multiply = self._multiply
@@ -192,8 +192,8 @@ class FField:
             self.divide = lambda a, b: self._divide(long(a), long(b))
 
     def prepare_lut(self):
-        field_size = 1 << self.n
-        lut_name = 'ffield.lut.' + repr(self.n)
+        field_size = 1 << self.p
+        lut_name = 'ffield.lut.' + repr(self.p)
         if os.path.exists(lut_name):
             fd = open(lut_name, 'rb')
             self.lut = pickle.load(fd)
@@ -243,7 +243,7 @@ class FField:
         """
         m = self.multiply_without_reducing(f, v)
         return self.full_division(m, self.generator,
-                                  self.find_degree(m), self.n)[1]
+                                  self.find_degree(m), self.p)[1]
 
     def _inverse_for_small_field(self, f):
         """
@@ -251,7 +251,7 @@ class FField:
         returns the result.
         """
         return self.extended_euclid(1, f, self.generator,
-                                    self.find_degree(f), self.n)[1]
+                                    self.find_degree(f), self.p)[1]
 
     def _inverse_for_big_field(self, f):
         """
@@ -259,7 +259,7 @@ class FField:
         returns the result.
         """
         return self.extended_euclid(self.unity, long(f), self.generator,
-                                    self.find_degree(long(f)), self.n)[1]
+                                    self.find_degree(long(f)), self.p)[1]
 
     def _divide(self, f, v):
         """
@@ -296,7 +296,7 @@ class FField:
         result = 0
         mask = self.unity
         i = 0
-        while i <= self.n:
+        while i <= self.p:
             if mask & v:
                 result = result ^ f
             f = f << 1
@@ -347,7 +347,7 @@ class FField:
         Show coefficients of input field element represented as a
         polynomial in decreasing order.
         """
-        f_degree = self.n
+        f_degree = self.p
 
         result = []
         for i in range(f_degree, -1, -1):
@@ -384,7 +384,7 @@ class FField:
         than max_degree.
         """
         if max_degree is None:
-            max_degree = self.n
+            max_degree = self.p
         if max_degree <= 1 and non_zero:
             return 1
         if max_degree < 31:

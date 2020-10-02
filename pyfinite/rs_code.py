@@ -104,7 +104,7 @@ class RSCode:
 
     def __repr__(self):
         rep = ('<RSCode (n, k) = (' + repr(self.n) + ', ' + repr(self.k) + ')'
-               + '  over GF(2^' + repr(self.field.n) + ')\n' +
+               + '  over GF(2^' + repr(self.field.p) + ')\n' +
                repr(self.encoder_matrix) + '\n' + '>')
         return rep
 
@@ -189,7 +189,7 @@ class RSCode:
         for i in range(num_tests):
             in_vec = list(range(self.k))
             for j in range(self.k):
-                in_vec[j] = random.randint(0, (1 << self.field.n)-1)
+                in_vec[j] = random.randint(0, (1 << self.field.p) - 1)
             coded_vec = self.encode(in_vec)
             num_erasures = random.randint(0, max_erasures)
             for j in range(num_erasures):
