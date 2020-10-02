@@ -363,17 +363,16 @@ class FField:
         """
         Show input field element represented as a polynomial.
         """
-        result = ''
-
         if f == 0:
             return '0'
 
+        result = []
         for i in range(self.find_degree(f), 0, -1):
             if (self.unity << i) & f:
-                result = result + (' x^' + repr(i))
+                result.append('x^' + repr(i))
         if 1 & f:
-            result = result + ' ' + repr(1)
-        return result.strip().replace(' ', ' + ')
+            result.append('1')
+        return ' + '.join(result)
 
     def get_random_element(self, non_zero=0, max_degree=None):
         """
