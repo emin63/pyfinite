@@ -219,19 +219,21 @@ class FField:
     def _lut_divide(self, i, j):
         return self.lut.div_lut[i][j]
 
-    def add(self, x, y):
+    @staticmethod
+    def add(x, y):
         """
         Adds two field elements and returns the result.
         """
         return x ^ y
 
-    def subtract(self, x, y):
+    @classmethod
+    def subtract(cls, x, y):
         """
         Subtracts the second argument from the first and returns
         the result.  In fields of characteristic two this is the same
         as the add method.
         """
-        return self.add(x, y)
+        return cls.add(x, y)
 
     def _multiply(self, f, v):
         """
@@ -267,7 +269,8 @@ class FField:
         """
         return self._multiply(f, self.inverse(v))
 
-    def find_degree(self, v):
+    @staticmethod
+    def find_degree(v):
         """
         Find the degree of the polynomial representing the input field
         element v.  This takes O(degree(v)) operations.
@@ -347,10 +350,8 @@ class FField:
         Show coefficients of input field element represented as a
         polynomial in decreasing order.
         """
-        f_degree = self.p
-
         result = []
-        for i in range(f_degree, -1, -1):
+        for i in range(self.find_degree(f), -1, -1):
             if (self.unity << i) & f:
                 result.append(1)
             else:
@@ -362,14 +363,13 @@ class FField:
         """
         Show input field element represented as a polynomial.
         """
-        f_degree = self.find_degree(f)
         result = ''
 
         if f == 0:
             return '0'
 
-        for i in range(f_degree, 0, -1):
-            if (1 << i) & f:
+        for i in range(self.find_degree(f), 0, -1):
+            if (self.unity << i) & f:
                 result = result + (' x^' + repr(i))
         if 1 & f:
             result = result + ' ' + repr(1)
@@ -398,7 +398,8 @@ class FField:
             else:
                 return result
 
-    def convert_list_to_element(self, lst):
+    @staticmethod
+    def convert_list_to_element(lst):
         """
         This method takes as input a binary list (e.g. [1, 0, 1, 1])
         and converts it to a decimal representation of a field element.

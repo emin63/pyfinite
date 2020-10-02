@@ -722,28 +722,30 @@ def dot_product(mul, add, x, y):
 
 
 class GenericMatrixTester:
-    def test(self, num_tests, size_list):
+    @classmethod
+    def test(cls, num_tests, size_list):
         """
         Function:       test(num_tests, size_list)
 
         Description:    For each test, run num_tests tests for square
                         matrices with the sizes in size_list.
         """
-
         for size in size_list:
-            self.random_inverse_test(size, num_tests)
-            self.random_lup_test(size, num_tests)
-            self.random_solve_test(size, num_tests)
-            self.random_det_test(size, num_tests)
-            self.random_add_test(size, size + 1, num_tests)
+            cls.random_inverse_test(size, num_tests)
+            cls.random_lup_test(size, num_tests)
+            cls.random_solve_test(size, num_tests)
+            cls.random_det_test(size, num_tests)
+            cls.random_add_test(size, size + 1, num_tests)
 
-    def make_random(self, s):
+    @staticmethod
+    def make_random(s):
         import random 
         r = GenericMatrix(size=s, fill_mode=lambda x, y: random.random(),
                           equals_zero=lambda x: abs(x) < 1e-6)
         return r
 
-    def mat_abs(self, m):
+    @staticmethod
+    def mat_abs(m):
         r = -1
         rows, cols = m.size()
         for i in range(0, rows):
@@ -752,36 +754,40 @@ class GenericMatrixTester:
                     r = abs(m[i, j])
         return r
 
-    def random_add_test(self, rows, cols, times):
+    @classmethod
+    def random_add_test(cls, rows, cols, times):
         """Do some random tests to check addition and subtraction."""
         for i in range(times):
-            first = self.make_random((rows, cols))
-            second = self.make_random((rows, cols))
+            first = cls.make_random((rows, cols))
+            second = cls.make_random((rows, cols))
             m_sum = first + second
-            assert self.mat_abs(m_sum - first - second) < 1e-6
+            assert cls.mat_abs(m_sum - first - second) < 1e-6
 
-    def random_inverse_test(self, s, n):
+    @classmethod
+    def random_inverse_test(cls, s, n):
         ident = GenericMatrix(size=(s, s), fill_mode='i')
         for i in range(n):
-            m = self.make_random((s, s))
-            assert self.mat_abs(ident - m * m.inverse()) < 1e-6, (
+            m = cls.make_random((s, s))
+            assert cls.mat_abs(ident - m * m.inverse()) < 1e-6, (
                 'offender = ' + repr(m))
 
-    def random_lup_test(self, s, n):
+    @classmethod
+    def random_lup_test(cls, s, n):
         for i in range(n):
-            m = self.make_random((s, s))
+            m = cls.make_random((s, s))
             lower, upper, perm = m.lup()
-            assert self.mat_abs(perm * m - lower * upper) < 1e-6, \
+            assert cls.mat_abs(perm * m - lower * upper) < 1e-6, \
                 'offender = ' + repr(m)
 
-    def random_solve_test(self, s, n):
+    @classmethod
+    def random_solve_test(cls, s, n):
         import random
         if s <= 1:
             return
         extra_equations = 3
         
         for i in range(n):
-            m = self.make_random((s, s + extra_equations))
+            m = cls.make_random((s, s + extra_equations))
             for j in range(extra_equations):
                 col_to_kill = random.randrange(s+extra_equations)
                 for r in range(m.rows):
@@ -795,10 +801,11 @@ class GenericMatrixTester:
                                  '\nx = ' + repr(x) + '\nb = ' + repr(b) +
                                  '\ndiff = ' + repr(diff))
 
-    def random_det_test(self, s, n):
+    @classmethod
+    def random_det_test(cls, s, n):
         for i in range(n):
-            m1 = self.make_random((s, s))
-            m2 = self.make_random((s, s))
+            m1 = cls.make_random((s, s))
+            m2 = cls.make_random((s, s))
             prod = m1 * m2
             assert (abs(m1.determinant() * m2.determinant()
                         - prod.determinant())
