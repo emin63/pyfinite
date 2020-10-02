@@ -38,7 +38,6 @@ import sys
 # from the list at
 # http://www.math.rwth-aachen.de/~Frank.Luebeck/ConwayPol/cp2.html
 
-g_primitive_polys = {}
 g_primitive_polys_condensed = {
     1:   (1, 0),
     2:   (2, 1, 0),
@@ -83,13 +82,10 @@ g_primitive_polys_condensed = {
     97:  (97, 6, 0),
     100: (100, 15, 0),
 }
-
-for n in g_primitive_polys_condensed.keys():
-    g_primitive_polys[n] = [0]*(n+1)
-    unity = 1
-    for index in g_primitive_polys_condensed[n]:
-        g_primitive_polys[n][index] = unity
-    g_primitive_polys[n].reverse()
+g_primitive_polys = {
+    n: [1 if i in indexes else 0 for i in reversed(range(n + 1))]
+    for n, indexes in g_primitive_polys_condensed.items()
+}
 
 
 if sys.version_info[0] >= 3:
