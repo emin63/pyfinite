@@ -36,7 +36,7 @@ license_doc describes the license and lack of warranty.
 
 The following is an example of how to use this file:
 
->>> import file_ecc
+>>> from pyfinite import file_ecc
 >>> testFile = '/bin/ls'      # A reasonable size file for testing.
 >>> prefix = '/tmp/ls_backup' # Prefix for shares of file.
 >>> names = file_ecc.EncodeFile(testFile,prefix,15,11) # break into N=15 pieces
@@ -54,7 +54,7 @@ The following is an example of how to use this file:
 
 
 
-from rs_code import RSCode
+from pyfinite.rs_code import RSCode
 from array import array
 
 import os, struct, string
