@@ -13,8 +13,7 @@ docstrings provide detailed information on various topics.
 
 """
 
-import ffield
-import genericmatrix
+from pyfinite import ffield, genericmatrix
 import math
 import doctest
 
@@ -34,7 +33,7 @@ class RSCode:
 
     A breif example of how to use the code follows:
 
->>> import rs_code
+>>> from pyfinite import rs_code
 
 # Create a coder for an (n,k) = (16,8) code and test
 # decoding for a simple erasure pattern.
