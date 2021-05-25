@@ -124,7 +124,7 @@ class FField:
 
     Example of how to use the FField class:
 
->>> import ffield
+>>> from pyfinite import ffield
 >>> F = ffield.FField(5) # create the field GF(2^5)
 >>> a = 7 # field elements are denoted as integers from 0 to 2^5-1
 >>> b = 15
@@ -219,9 +219,13 @@ class FField:
 
 
     def LUTMultiply(self,i,j):
+        i = getattr(i, 'f', i)  # needed if i is a field element
+        j = getattr(j, 'f', j)  # needed if j is a field element
         return self.lut.mulLUT[i][j]
 
-    def LUTDivide(self,i,j):
+    def LUTDivide(self, i, j):
+        i = getattr(i, 'f', i)  # needed if i is a field element
+        j = getattr(j, 'f', j)  # needed if j is a field element        
         return self.lut.divLUT[i][j]
 
     def Add(self,x,y):
@@ -475,7 +479,7 @@ class FElement:
     Note that before creating FElement objects you must first
     create an FField object.  For example,
 
->>> import ffield
+>>> from pyfinite import ffield
 >>> F = ffield.FField(5)
 >>> e1 = ffield.FElement(F,7)
 >>> e1
@@ -541,9 +545,13 @@ x^4 + x^3
     def __repr__(self):
         return self.__str__()
 
-    def __eq__(self,other):
-        assert self.field == other.field
-        return self.f == other.f
+    def __eq__(self, other):
+        if isinstance(other, int):
+            other_element = other
+        else:
+            assert self.field == other.field
+            other_element = other.f
+        return self.f == other_element
 
 def FullTest(testsPerField=10,sizeList=None):
     """
@@ -743,7 +751,7 @@ The FField class has a number of built in testing functions such as
 TestFullDivision, TestInverse.  The simplest thing to
 do is to call the FullTest method.
 
->>> import ffield
+>>> from pyfinite import ffield
 >>> ffield.FullTest(sizeList=None,testsPerField=100)
 
 # To decrease the testing time you can either decrease the testsPerField

@@ -1,4 +1,4 @@
 """Python package for finite field operations and erasure correction.
 """
 
-VERSION = '1.7'
+VERSION = '1.8'
