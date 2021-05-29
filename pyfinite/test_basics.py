@@ -9,6 +9,25 @@ from pyfinite import ffield
 from pyfinite import genericmatrix
 
 
+class FieldTester(unittest.TestCase):
+
+    def test_div_zero(self):
+        """Verify that division with zero works correctly.
+
+Dividing by 0 should raise ZeroDivisionError and dividing 0 by something
+that is non-zero should return 0.
+        """
+        div_zero_throws = False
+        my_field = ffield.FField(8, gen=355, useLUT=1)
+        try:
+            my_field.Divide(10, 0)
+        except ZeroDivisionError:
+            div_zero_throws = True
+        self.assertTrue(div_zero_throws)
+        self.assertEqual(0, my_field.Divide(0, 10))
+
+
+
 class MatrixTester(unittest.TestCase):
     """Class to test various matrix operations.
     """

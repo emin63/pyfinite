@@ -207,12 +207,12 @@ class FField:
             self.lut.mulLUT = list(range(fieldSize))
             self.lut.divLUT = list(range(fieldSize))
             self.lut.mulLUT[0] = [0]*fieldSize
-            self.lut.divLUT[0] = ['NaN']*fieldSize
-            for i in range(1,fieldSize):
+            self.lut.divLUT[0] = [0]*fieldSize
+            for i in range(1, fieldSize):
                 self.lut.mulLUT[i] = [self.DoMultiply(i,x)
                                       for x in range(fieldSize)]
-                self.lut.divLUT[i] = [self.DoDivide(i,x)
-                                      for x in range(fieldSize)]
+                self.lut.divLUT[i] = ['NaN'] + [self.DoDivide(i,x)
+                                      for x in range(1, fieldSize)]
             fd = open(lutName,'wb')
             pickle.dump(self.lut,fd)
             fd.close()
@@ -224,6 +224,8 @@ class FField:
         return self.lut.mulLUT[i][j]
 
     def LUTDivide(self, i, j):
+        if 0 == j:
+            raise ZeroDivisionError()        
         i = getattr(i, 'f', i)  # needed if i is a field element
         j = getattr(j, 'f', j)  # needed if j is a field element        
         return self.lut.divLUT[i][j]
@@ -260,6 +262,8 @@ class FField:
         Computes the multiplicative inverse of its argument and
         returns the result.
         """
+        if 0 == f:
+            raise ZeroDivisionError()
         return self.ExtendedEuclid(1,f,self.generator,
                                    self.FindDegree(f),self.n)[1]
 
@@ -268,6 +272,8 @@ class FField:
         Computes the multiplicative inverse of its argument and
         returns the result.
         """
+        if 0 == f:
+            raise ZeroDivisionError()        
         return self.ExtendedEuclid(self.unity,long(f),self.generator,
                                    self.FindDegree(long(f)),self.n)[1]
 
@@ -464,6 +470,13 @@ class FField:
         assert 1 == prod, ('TestInverse failed:' + 'a=' + repr(a) + ', aInv='
                            + repr(aInv) + ', prod=' + repr(prod),
                            'gen=' + repr(self.generator))
+        div_zero_throws = False
+        try:
+            self.Divide(a, 0)
+        except ZeroDivisionError:
+            div_zero_throws = True
+        assert div_zero_throws, 'TestInverse failed to catch div zero error'
+
 
 class LUT:
     """
