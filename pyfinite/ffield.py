@@ -26,6 +26,7 @@ detailed information on various topics:
 
 """
 
+import logging
 import string, random, os, os.path, pickle
 import sys
 import functools
@@ -193,12 +194,18 @@ class FField:
             self.Multiply = lambda a,b: self.DoMultiply(long(a),long(b))
             self.Divide = lambda a,b: self.DoDivide(long(a),long(b))
 
-
+    @staticmethod
+    def make_lut_path(exponent):
+        """Make path for lookup table.
+        """
+        lutName = 'ffield.lut.' + repr(exponent)
+        return lutName
 
     def PrepareLUT(self):
         fieldSize = 1 << self.n
-        lutName = 'ffield.lut.' + repr(self.n)
+        lutName = self.make_lut_path(self.n)
         if (os.path.exists(lutName)):
+            logging.info('Loading lookup table from %s', lutName)
             fd = open(lutName,'rb')
             self.lut = pickle.load(fd)
             fd.close()
