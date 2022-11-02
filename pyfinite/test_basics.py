@@ -1,6 +1,7 @@
 """Some basic and quick unit tests.
 """
 
+import os
 import unittest
 import operator
 import types
@@ -18,6 +19,8 @@ Dividing by 0 should raise ZeroDivisionError and dividing 0 by something
 that is non-zero should return 0.
         """
         div_zero_throws = False
+        if os.path.exists(ffield.FField.make_lut_path(8)):
+            os.remove(ffield.FField.make_lut_path(8))
         my_field = ffield.FField(8, gen=355, useLUT=1)
         try:
             my_field.Divide(10, 0)
