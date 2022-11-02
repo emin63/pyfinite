@@ -201,6 +201,16 @@ class FField:
         lutName = 'ffield.lut.' + repr(exponent)
         return lutName
 
+    def raise_on_bad_lut(self, lutName):
+        """Helper to complain if lookup table suspicious.
+        """
+        lut_gen = getattr(self.lut, 'generator', None)
+        if lut_gen != self.generator:
+            msg = (f'Refusing to use lookup table in file {lutName}.\n'
+                   'That file is for a different or unknown generator.\n'
+                   'Please remove that file or pass useLUT=0 to init.')
+            raise ValueError(msg)
+
     def PrepareLUT(self):
         fieldSize = 1 << self.n
         lutName = self.make_lut_path(self.n)
@@ -208,9 +218,10 @@ class FField:
             logging.info('Loading lookup table from %s', lutName)
             fd = open(lutName,'rb')
             self.lut = pickle.load(fd)
+            self.raise_on_bad_lut(lutName)
             fd.close()
         else:
-            self.lut = LUT()
+            self.lut = LUT(generator=self.generator, n=self.n)
             self.lut.mulLUT = list(range(fieldSize))
             self.lut.divLUT = list(range(fieldSize))
             self.lut.mulLUT[0] = [0]*fieldSize
@@ -486,10 +497,18 @@ class FField:
 
 
 class LUT:
+    """Lookup table used to speed up some finite field operations.
     """
-    Lookup table used to speed up some finite field operations.
-    """
-    pass
+
+    def __init__(self, generator, n):
+        """Initializer.
+
+        :param generator:   Generator for field we are making LUT for.
+
+        :param n:   Power size for field we are making LUT for.
+        """
+        self.generator = generator
+        self.n = n
 
 
 class FElement:

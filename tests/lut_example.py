@@ -43,10 +43,15 @@ If you now create a field using a lookup table, you may get
 unexpected results:
 
 >>> from pyfinite import ffield
->>> f_0x11B_with_LUT = ffield.FField(8, gen=0x11B)
->>> res = f_0x11B_with_LUT.Multiply(0xFF, 2) 
->>> print(res)
-227
+>>> try:  # the following will raise an exception:
+...     f_0x11B_with_LUT = ffield.FField(8, gen=0x11B)
+... except ValueError as problem:
+...     print(problem)
+...
+Refusing to use lookup table in file ffield.lut.8.
+That file is for a different or unknown generator.
+Please remove that file or pass useLUT=0 to init.
+
 
 Another altrenative is to explicitly remove the lookup table
 if it exists to prevent this issue:
